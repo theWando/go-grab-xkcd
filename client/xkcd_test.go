@@ -67,12 +67,18 @@ const jsonResponse = `{
   "title": "Earth Temperature Timeline",
   "day": "12"
 }`
+const badJson = `{
+  "month": "9,
+  "day": "12"
+}`
 
-func mockServer(body string) *httptest.Server {
+func mockServer(body string, statusCode int, headers map[string]string) *httptest.Server {
 
 	f := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		for key, value := range headers {
+			w.Header().Set(key, value)
+		}
 		fmt.Fprintln(w, body)
 	}
 	return httptest.NewServer(http.HandlerFunc(f))
@@ -80,8 +86,9 @@ func mockServer(body string) *httptest.Server {
 
 func Test_xKCDClient_Fetch(t *testing.T) {
 
-	server := mockServer(jsonResponse)
-	defer server.Close()
+	defaultClient := &http.Client{
+		Timeout: 10 * time.Millisecond,
+	}
 
 	type fields struct {
 		client  *http.Client
@@ -93,18 +100,17 @@ func Test_xKCDClient_Fetch(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
+		server  *httptest.Server
 		fields  fields
 		args    args
 		want    model.Comic
 		wantErr bool
 	}{
 		{
-			name: "Should return object",
+			name:   "Should return object",
+			server: mockServer(jsonResponse, 200, map[string]string{"Content-Type": "application/json"}),
 			fields: fields{
-				client: &http.Client{
-					Timeout: 10 * time.Second,
-				},
-				baseURL: server.URL,
+				client: defaultClient,
 			},
 			args: args{
 				n:    9,
@@ -119,12 +125,53 @@ func Test_xKCDClient_Fetch(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name:   "Should return an error when the json is invalid",
+			server: mockServer(badJson, 200, map[string]string{"Content-Type": "application/json"}),
+			fields: fields{
+				client: defaultClient,
+			},
+			args: args{
+				n:    0,
+				save: false,
+			},
+			want:    model.Comic{},
+			wantErr: true,
+		},
+		{
+			name:   "Should return an error when the body is empty",
+			server: mockServer("", 500, map[string]string{"Content-Type": "application/json"}),
+			fields: fields{
+				client: defaultClient,
+			},
+			args: args{
+				n:    0,
+				save: false,
+			},
+			want:    model.Comic{},
+			wantErr: true,
+		},
+		{
+			name: "Should return an error when server is unreachable",
+			server: httptest.NewUnstartedServer(http.HandlerFunc(func(writer http.ResponseWriter, r *http.Request) {
+
+			})),
+			fields: fields{
+				client: defaultClient,
+			},
+			args: args{
+				n:    0,
+				save: false,
+			},
+			want:    model.Comic{},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			hc := &xKCDClient{
 				client:  tt.fields.client,
-				baseURL: tt.fields.baseURL,
+				baseURL: tt.server.URL,
 			}
 			got, err := hc.Fetch(tt.args.n, tt.args.save)
 			if (err != nil) != tt.wantErr {
@@ -134,6 +181,7 @@ func Test_xKCDClient_Fetch(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Fetch() got = %v, want %v", got, tt.want)
 			}
+			tt.server.Close()
 		})
 	}
 }
