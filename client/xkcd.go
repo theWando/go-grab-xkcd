@@ -23,15 +23,15 @@ const (
 
 type ComicNumber int
 
-// xKCDClient is the client for XKCD
-type xKCDClient struct {
+// XKCDClient is the client for XKCD
+type XKCDClient struct {
 	client  *http.Client
 	baseURL string
 }
 
-// NewXKCDClient creates a new xKCDClient
-func NewXKCDClient() *xKCDClient {
-	return &xKCDClient{
+// NewXKCDClient creates a new XKCDClient
+func NewXKCDClient() *XKCDClient {
+	return &XKCDClient{
 		client: &http.Client{
 			Timeout: DefaultClientTimeout,
 		},
@@ -40,13 +40,13 @@ func NewXKCDClient() *xKCDClient {
 }
 
 // SetTimeout overrides the default ClientTimeout
-func (hc *xKCDClient) SetTimeout(d time.Duration) {
+func (hc *XKCDClient) SetTimeout(d time.Duration) {
 	hc.client.Timeout = d
 }
 
 // Fetch retrieves the comic as per provided comic number
-func (hc *xKCDClient) Fetch(n ComicNumber, save bool) (model.Comic, error) {
-	resp, err := hc.client.Get(hc.buildURL(n))
+func (hc *XKCDClient) Fetch(n ComicNumber, save bool) (model.Comic, error) {
+	resp, err := hc.client.Get(hc.BuildURL(n))
 	if err != nil {
 		return model.Comic{}, err
 	}
@@ -66,7 +66,7 @@ func (hc *xKCDClient) Fetch(n ComicNumber, save bool) (model.Comic, error) {
 }
 
 // SaveToDisk downloads and saves the comic locally
-func (hc *xKCDClient) SaveToDisk(url, savePath string) error {
+func (hc *XKCDClient) SaveToDisk(url, savePath string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -89,7 +89,8 @@ func (hc *xKCDClient) SaveToDisk(url, savePath string) error {
 	return nil
 }
 
-func (hc *xKCDClient) buildURL(n ComicNumber) string {
+// BuildURL Generates the url to request que comic data
+func (hc *XKCDClient) BuildURL(n ComicNumber) string {
 	var finalURL string
 	if n == LatestComic {
 		finalURL = fmt.Sprintf("%s/info.0.json", hc.baseURL)

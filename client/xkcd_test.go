@@ -10,6 +10,17 @@ import (
 	"time"
 )
 
+func ExampleXKCDClient_BuildURL() {
+
+	hc := NewXKCDClient()
+	fmt.Println(hc.BuildURL(0))
+	fmt.Println(hc.BuildURL(10))
+	// Output:
+	//https://xkcd.com/info.0.json
+	//https://xkcd.com/10/info.0.json
+
+}
+
 func Test_xKCDClient_buildURL(t *testing.T) {
 	type fields struct {
 		client  *http.Client
@@ -43,12 +54,12 @@ func Test_xKCDClient_buildURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hc := &xKCDClient{
+			hc := &XKCDClient{
 				client:  tt.fields.client,
 				baseURL: tt.fields.baseURL,
 			}
-			if got := hc.buildURL(tt.args.n); got != tt.want {
-				t.Errorf("buildURL() = %v, want %v", got, tt.want)
+			if got := hc.BuildURL(tt.args.n); got != tt.want {
+				t.Errorf("BuildURL() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -169,7 +180,7 @@ func Test_xKCDClient_Fetch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hc := &xKCDClient{
+			hc := &XKCDClient{
 				client:  tt.fields.client,
 				baseURL: tt.server.URL,
 			}
