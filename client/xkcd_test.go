@@ -96,14 +96,12 @@ func mockServer(body string, statusCode int, headers map[string]string) *httptes
 }
 
 func Test_xKCDClient_Fetch(t *testing.T) {
-
 	defaultClient := &http.Client{
 		Timeout: 10 * time.Millisecond,
 	}
 
 	type fields struct {
-		client  *http.Client
-		baseURL string
+		client *http.Client
 	}
 	type args struct {
 		n    ComicNumber

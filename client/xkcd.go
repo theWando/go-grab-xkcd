@@ -3,13 +3,14 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/theWando/go-grab-xkcd/model"
 	"io"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"time"
+
+	"github.com/theWando/go-grab-xkcd/model"
 )
 
 const (
